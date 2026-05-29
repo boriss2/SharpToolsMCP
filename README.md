@@ -50,6 +50,7 @@ I intend to maintain and improve it for as long as I am using it, and I welcome 
 *   **Proactive Code Quality Analysis:**
     *   Detects and warns about high code complexity (cyclomatic, cognitive).
     *   Identifies semantically similar code to flag potential duplicates upon member addition.
+*   **Razor Page Support:** Parses `.cshtml` and `.razor` files by reading the C# that the Razor source generator actually produces — not a re-parse approximation. Returns the generated C# and a precise bidirectional source map so any Roslyn diagnostic position can be translated back to the original Razor file.
 *   **Broad Project Support:**
     *   Runs on Windows and Linux (and probably Mac)
     *   Can analyze projects targeting any .NET version, from Framework to Core to 5+
@@ -103,6 +104,12 @@ SharpTools exposes a variety of "SharpTool_*" functions via MCP. Here's a brief 
 ### Package Tools
 
 *   ~(Disabled) `SharpTool_AddOrModifyNugetPackage`: Adds or updates a NuGet package reference in a project file.~
+
+### Razor Tools
+
+*   `SharpTool_ReadRazorDocument`: Reads a `.cshtml` or `.razor` file and returns its source with a summary of how many code regions Razor identified. Use this as the entry point for Razor files instead of `SharpTool_ReadRawFromRoslynDocument`.
+*   `SharpTool_GetRazorGeneratedCSharp`: Returns the full C# source the Razor compiler generates for a `.cshtml`/`.razor` file — the same code the project actually compiles.
+*   `SharpTool_GetRazorSourceMappings`: Returns a JSON array mapping each code span in the Razor file to its position in the generated C# (and vice versa). Positions align with Roslyn diagnostics.
 
 ### Misc Tools
 
