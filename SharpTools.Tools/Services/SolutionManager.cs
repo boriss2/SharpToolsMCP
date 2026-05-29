@@ -263,7 +263,7 @@ public sealed class SolutionManager : ISolutionManager {
             throw new McpException($"FQN was ambiguous, did you mean one of these?\n{string.Join("\n", matchList.Select(m => m.CanonicalFqn))}");
         }
         // Direct lookup as fallback
-        foreach (var project in CurrentSolution.Projects) {
+        foreach (var project in _currentSolution.Projects) {
             // Check cancellation before each project
             cancellationToken.ThrowIfCancellationRequested();
             var compilation = await GetCompilationAsync(project.Id, cancellationToken);
@@ -284,7 +284,7 @@ public sealed class SolutionManager : ISolutionManager {
         if (lastDotIndex > 0) {
             var parentTypeName = fullyQualifiedTypeName.Substring(0, lastDotIndex);
             var nestedTypeName = fullyQualifiedTypeName.Substring(lastDotIndex + 1);
-            foreach (var project in CurrentSolution.Projects) {
+            foreach (var project in _currentSolution.Projects) {
                 // Check cancellation before each project
                 cancellationToken.ThrowIfCancellationRequested();
                 var compilation = await GetCompilationAsync(project.Id, cancellationToken);
@@ -461,7 +461,7 @@ public sealed class SolutionManager : ISolutionManager {
         // Check cancellation before document lookup
         cancellationToken.ThrowIfCancellationRequested();
 
-        var document = CurrentSolution.GetDocument(documentId);
+        var document = _currentSolution.GetDocument(documentId);
         if (document == null) {
             _logger.LogWarning("Document not found for ID: {DocumentId}", documentId);
             return null;
@@ -498,7 +498,7 @@ public sealed class SolutionManager : ISolutionManager {
         // Check cancellation before project lookup
         cancellationToken.ThrowIfCancellationRequested();
 
-        var project = CurrentSolution.GetProject(projectId);
+        var project = _currentSolution.GetProject(projectId);
         if (project == null) {
             _logger.LogWarning("Project not found for ID: {ProjectId}", projectId);
             return null;
