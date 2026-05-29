@@ -36,6 +36,7 @@ public static class ServiceCollectionExtensions {
         services.AddSingleton<IComplexityAnalysisService, ComplexityAnalysisService>();
         services.AddSingleton<ISemanticSimilarityService, SemanticSimilarityService>();
         services.AddSingleton<ISourceResolutionService, SourceResolutionService>();
+        services.AddSingleton<IRazorDocumentService, RazorDocumentService>();
 
         return services;
     }
