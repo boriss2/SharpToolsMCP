@@ -36,7 +36,7 @@ I intend to maintain and improve it for as long as I am using it, and I welcome 
 *   **FQN Fuzzy Matching:** Intelligently resolves potentially imprecise or incomplete Fully Qualified Names (FQNs) to exact Roslyn symbols.
 *   **Comprehensive Source Resolution:** Retrieves source code for symbols from:
     *   Local solution files.
-    *   External libraries via SourceLink.
+    *   External libraries via SourceLink (HTTPS only; private/loopback addresses are blocked).
     *   Embedded PDBs.
     *   Decompilation (ILSpy-based) as a fallback.
 *   **Precise, Roslyn-Based Modifications:** Enables surgical code changes (add/overwrite/rename/move members, find/replace) rather than simple text manipulation.

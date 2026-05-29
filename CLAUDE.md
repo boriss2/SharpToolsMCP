@@ -68,7 +68,7 @@ All services are registered as singletons in `Extensions/ServiceCollectionExtens
 
 - **MSBuild bootstrap**: `MsBuildLocatorBootstrapper` must run before any Roslyn workspace is opened. Both `Program.cs` files call this during startup.
 - **FQN resolution**: `FuzzyFqnLookupService` is the entry point for turning user-supplied type/member names into Roslyn symbols — it handles partial names, overloads, and ambiguity.
-- **Source retrieval order**: local file → SourceLink → embedded PDB → ICSharpCode.Decompiler fallback.
+- **Source retrieval order**: local file → SourceLink → embedded PDB → ICSharpCode.Decompiler fallback. SourceLink HTTP fetches are restricted to `https` only and blocked for loopback, link-local, and RFC-1918 addresses (`IsSourceLinkUrlAllowed` in `SourceResolutionService`) to prevent SSRF via malicious PDB content.
 - **Git integration**: when enabled, modifications create/commit to a `sharptools/<branch>` git branch using LibGit2Sharp.
 - **Razor parsing**: `RazorDocumentService` surfaces the C# that the Razor source generator produces for a `.cshtml`/`.razor` file via `Project.GetSourceGeneratedDocumentsAsync`. It locates the generated document by matching the generator's hint name (`{FileName}_{ext}`), then extracts source mappings with `SyntaxTree.GetMappedLineSpan` — the same mechanism Roslyn uses for diagnostics, so positions align with real compiler output. Falls back to driving `CSharpGeneratorDriver` explicitly if the workspace returns no generated documents. `.cshtml` files are found as `AdditionalDocuments` on the owning Roslyn `Project`.
 

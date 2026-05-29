@@ -1,4 +1,5 @@
 using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Reflection.Metadata;
@@ -154,6 +155,11 @@ namespace SharpTools.Tools.Services {
                 }
 
                 // Download the source from the URL
+                if (!IsSourceLinkUrlAllowed(sourceUrl)) {
+                    _logger.LogWarning("Source Link URL blocked (must be HTTPS and not a private/loopback address): {Url}", sourceUrl);
+                    return null;
+                }
+
                 _logger.LogInformation("Downloading source from URL: {Url}", sourceUrl);
                 var sourceCode = await _httpClient.GetStringAsync(sourceUrl, cancellationToken);
 
@@ -488,6 +494,38 @@ namespace SharpTools.Tools.Services {
 
             return path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) &&
             (suffix.Length == 0 || path.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static bool IsSourceLinkUrlAllowed(string url) {
+            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+                return false;
+
+            if (uri.Scheme != Uri.UriSchemeHttps)
+                return false;
+
+            var host = uri.Host;
+
+            if (host.Equals("localhost", StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            if (IPAddress.TryParse(host, out var ip)) {
+                if (IPAddress.IsLoopback(ip)) return false;
+
+                if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork) {
+                    var b = ip.GetAddressBytes();
+                    // 127.x.x.x, 10.x.x.x, 172.16-31.x.x, 192.168.x.x, 169.254.x.x (link-local / AWS metadata)
+                    if (b[0] == 127) return false;
+                    if (b[0] == 10) return false;
+                    if (b[0] == 172 && b[1] >= 16 && b[1] <= 31) return false;
+                    if (b[0] == 192 && b[1] == 168) return false;
+                    if (b[0] == 169 && b[1] == 254) return false;
+                }
+
+                if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6 && ip.IsIPv6LinkLocal)
+                    return false;
+            }
+
+            return true;
         }
 
         private string GetWildcardMatch(string path, string pattern) {
