@@ -61,3 +61,6 @@ Thumbs.db
 DS_Store
 
 publish/
+
+# Git worktrees
+.worktrees/
