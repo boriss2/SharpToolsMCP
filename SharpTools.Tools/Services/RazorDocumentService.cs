@@ -54,71 +54,33 @@ public class RazorDocumentService : IRazorDocumentService {
         return null;
     }
 
-    // Returns (generatedSyntaxTree, generatedSourceText).
-    // Primary: reads from the workspace's own source-generated documents (no extra work).
-    // Fallback: drives generators via CSharpGeneratorDriver if the workspace returns nothing.
     private async Task<(SyntaxTree tree, SourceText text)> FindGeneratedTreeAsync(
         Project project, string razorPath, CancellationToken ct) {
 
-        // In Roslyn 5.0.0 this returns IEnumerable<SourceGeneratedDocument>.
+        // In Roslyn 5.x this returns IEnumerable<SourceGeneratedDocument>.
         var generatedDocs = (await project.GetSourceGeneratedDocumentsAsync(ct)).ToList();
 
         _logger.LogDebug(
             "GetSourceGeneratedDocumentsAsync returned {Count} document(s) for project {Project}",
             generatedDocs.Count, project.Name);
 
-        if (generatedDocs.Count > 0) {
-            var doc = FindByName(generatedDocs, razorPath);
-            if (doc is not null) {
-                var tree = await doc.GetSyntaxTreeAsync(ct)
-                    ?? throw new InvalidOperationException(
-                        $"Could not get syntax tree for generated document of '{razorPath}'.");
-                var text = await doc.GetTextAsync(ct);
-                return (tree, text);
-            }
+        var doc = FindByName(generatedDocs, razorPath);
 
-            _logger.LogWarning(
-                "Found {Count} generated document(s) but none matched hint for '{Path}'. " +
-                "Document names: {Names}",
-                generatedDocs.Count, razorPath,
-                string.Join(", ", generatedDocs.Select(d => d.Name)));
+        if (doc is null) {
+            var names = generatedDocs.Count > 0
+                ? string.Join(", ", generatedDocs.Select(d => d.Name))
+                : "none";
+            throw new InvalidOperationException(
+                $"No source-generated document found for '{razorPath}' in project '{project.Name}'. " +
+                $"Available generated documents: {names}. " +
+                "Ensure the project's Razor source generator is registered and the solution has been built.");
         }
 
-        // Fallback: drive the source generators explicitly via CSharpGeneratorDriver.
-        _logger.LogWarning("Falling back to CSharpGeneratorDriver for '{Path}'.", razorPath);
-
-        var compilation = await project.GetCompilationAsync(ct) as CSharpCompilation
+        var tree = await doc.GetSyntaxTreeAsync(ct)
             ?? throw new InvalidOperationException(
-                $"Could not get C# compilation for project '{project.Name}'.");
-
-        var generators = project.AnalyzerReferences
-            .SelectMany(r => r.GetGenerators(LanguageNames.CSharp))
-            .ToArray();
-
-        if (generators.Length == 0)
-            throw new InvalidOperationException(
-                $"No C# source generators found in project '{project.Name}'. " +
-                "The Razor source generator may not be registered. See Appendix A in the plan.");
-
-        var driver = CSharpGeneratorDriver.Create(generators);
-        driver = (CSharpGeneratorDriver)driver.RunGenerators(compilation, ct);
-        var runResult = driver.GetRunResult();
-
-        var fileName = Path.GetFileNameWithoutExtension(razorPath);
-        var ext = Path.GetExtension(razorPath).TrimStart('.');
-        var hintFragment = $"{fileName}_{ext}";
-
-        var match = runResult.Results
-            .SelectMany(r => r.GeneratedSources)
-            .FirstOrDefault(s => s.HintName.Contains(hintFragment, StringComparison.OrdinalIgnoreCase));
-
-        if (match.SyntaxTree is null)
-            throw new InvalidOperationException(
-                $"CSharpGeneratorDriver found no generated source matching '{hintFragment}' for '{razorPath}'. " +
-                "Confirm the project compiles this Razor file. See Appendix A in the plan for the standalone engine fallback.");
-
-        var driverText = await match.SyntaxTree.GetTextAsync(ct);
-        return (match.SyntaxTree, driverText);
+                $"Could not get syntax tree for generated document of '{razorPath}'.");
+        var text = await doc.GetTextAsync(ct);
+        return (tree, text);
     }
 
     private static SourceGeneratedDocument? FindByName(
