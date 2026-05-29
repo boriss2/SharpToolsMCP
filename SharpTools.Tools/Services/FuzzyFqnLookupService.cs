@@ -411,7 +411,7 @@ namespace SharpTools.Tools.Services {
             // For non-method symbols, use the original full format
             return symbol.ToDisplayString(fqn).Replace(" ", string.Empty);
         }
-        private async Task LogAmbiguityDetailsAsync(string fuzzyFqnInput, List<FuzzyMatchResult> results, CancellationToken cancellationToken) {
+        private Task LogAmbiguityDetailsAsync(string fuzzyFqnInput, List<FuzzyMatchResult> results, CancellationToken cancellationToken) {
             const double HighScoreThreshold = 0.8; // Threshold for considering a match "high-scoring"
             const int MaxDetailedLogsPerAmbiguity = 10; // Limit detailed logs to prevent spam
 
@@ -447,6 +447,8 @@ namespace SharpTools.Tools.Services {
                 // Log summary statistics about the ambiguity
                 LogAmbiguitySummary(fuzzyFqnInput, results, highScoreMatches, perfectMatches);
             }
+
+            return Task.CompletedTask;
         }
         private void LogDetailedMatchInfoAsync(FuzzyMatchResult match, int rank, CancellationToken cancellationToken) {
             try {

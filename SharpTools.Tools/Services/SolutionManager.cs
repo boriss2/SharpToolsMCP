@@ -43,7 +43,7 @@ public sealed class SolutionManager : ISolutionManager {
             }
             
             _workspace = MSBuildWorkspace.Create(properties, MefHostServices.DefaultHost);
-            _workspace.WorkspaceFailed += OnWorkspaceFailed;
+            _workspace.RegisterWorkspaceFailedHandler(OnWorkspaceFailed);
             _logger.LogInformation("Loading solution: {SolutionPath}", solutionPath);
             _currentSolution = await _workspace.OpenSolutionAsync(solutionPath, new ProgressReporter(_logger), cancellationToken);
             _logger.LogInformation("Solution loaded successfully with {ProjectCount} projects.", _currentSolution.Projects.Count());
@@ -199,7 +199,6 @@ public sealed class SolutionManager : ISolutionManager {
         _semanticModelCache.Clear();
         _allLoadedReflectionTypesCache.Clear();
         if (_workspace != null) {
-            _workspace.WorkspaceFailed -= OnWorkspaceFailed;
             _workspace.CloseSolution();
             _workspace.Dispose();
             _workspace = null;
@@ -235,7 +234,7 @@ public sealed class SolutionManager : ISolutionManager {
         await LoadSolutionAsync(_workspace.CurrentSolution.FilePath!, cancellationToken);
         _logger.LogDebug("Current solution state has been refreshed from workspace.");
     }
-    private void OnWorkspaceFailed(object? sender, WorkspaceDiagnosticEventArgs e) {
+    private void OnWorkspaceFailed(WorkspaceDiagnosticEventArgs e) {
         var diagnostic = e.Diagnostic;
         var level = diagnostic.Kind == WorkspaceDiagnosticKind.Failure ? LogLevel.Error : LogLevel.Warning;
         _logger.Log(level, "Workspace diagnostic ({Kind}): {Message}", diagnostic.Kind, diagnostic.Message);
