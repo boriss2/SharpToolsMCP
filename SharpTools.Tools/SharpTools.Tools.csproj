@@ -3,6 +3,9 @@
 <TargetFramework>net8.0</TargetFramework>
 <ImplicitUsings>enable</ImplicitUsings>
 <Nullable>enable</Nullable>
+<!-- Suppress analyzer/compiler version mismatch; transitive Microsoft.CodeAnalysis.Analyzers
+     prerelease targets compiler 4.12 while the SDK ships 4.11. Analyzers still function correctly. -->
+<NoWarn>$(NoWarn);CS9057</NoWarn>
 </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="DiffPlex" Version="1.9.0" />
